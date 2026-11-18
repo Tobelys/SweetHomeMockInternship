@@ -58,7 +58,8 @@ public class HomePieceOfFurniture extends HomeObject implements PieceOfFurniture
    */
   public enum SortableProperty {CATALOG_ID, NAME, WIDTH, DEPTH, HEIGHT, MOVABLE, 
                                 DOOR_OR_WINDOW, COLOR, TEXTURE, VISIBLE, X, Y, ELEVATION, ANGLE,
-                                PRICE, VALUE_ADDED_TAX, VALUE_ADDED_TAX_PERCENTAGE, PRICE_VALUE_ADDED_TAX_INCLUDED, LEVEL};
+                                PRICE, VALUE_ADDED_TAX, VALUE_ADDED_TAX_PERCENTAGE, PRICE_VALUE_ADDED_TAX_INCLUDED, LEVEL,
+                                VOLUME};
   private static final Map<SortableProperty, Comparator<HomePieceOfFurniture>> SORTABLE_PROPERTY_COMPARATORS;
   private static final float [][] IDENTITY = new float [][] {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
   
@@ -66,6 +67,11 @@ public class HomePieceOfFurniture extends HomeObject implements PieceOfFurniture
     final Collator collator = Collator.getInstance();
     // Init piece property comparators
     SORTABLE_PROPERTY_COMPARATORS = new HashMap<SortableProperty, Comparator<HomePieceOfFurniture>>();
+    SORTABLE_PROPERTY_COMPARATORS.put(SortableProperty.VOLUME, new Comparator<HomePieceOfFurniture>() {
+      public int compare(HomePieceOfFurniture piece1, HomePieceOfFurniture piece2) {
+        return Float.compare(piece1.getVolume(), piece2.getVolume());
+      }
+    });
     SORTABLE_PROPERTY_COMPARATORS.put(SortableProperty.CATALOG_ID, new Comparator<HomePieceOfFurniture>() {
         public int compare(HomePieceOfFurniture piece1, HomePieceOfFurniture piece2) {
           if (piece1.catalogId == piece2.catalogId) {
@@ -194,7 +200,7 @@ public class HomePieceOfFurniture extends HomeObject implements PieceOfFurniture
         }
       });
   }
-  
+
   private static int compare(float value1, float value2) {
     return Float.compare(value1, value2);
   }
@@ -568,6 +574,13 @@ public class HomePieceOfFurniture extends HomeObject implements PieceOfFurniture
    */
   public float getWidth() {
     return this.width;
+  }
+
+  /**
+   * Returns the volume of this piece of furniture.
+   */
+  public float getVolume() {
+    return this.getWidth() * this.getDepth() * this.getHeight();
   }
 
   /**

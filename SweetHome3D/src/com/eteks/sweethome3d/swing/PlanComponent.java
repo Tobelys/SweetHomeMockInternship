@@ -2023,7 +2023,8 @@ public class PlanComponent extends JComponent implements PlanView, Scrollable, P
       if (this.home.getPrint() == null || this.home.getPrint().getPlanScale() == null) {
         // Compute a scale that ensures the plan will fill the component if plan scale is null
         printScale = getPrintPreferredScale(g, pageFormat) * LengthUnit.centimeterToInch(72);
-        if (pageIndex > 0) {
+        int viewableLevelCount = getViewableLevelCount();
+        if (pageIndex >= viewableLevelCount) {
           return NO_SUCH_PAGE;
         }
         pagesPerRow = 1;
@@ -2041,7 +2042,8 @@ public class PlanComponent extends JComponent implements PlanView, Scrollable, P
         if (printedItemBounds.getHeight() * printScale != imageableHeight) {
           pagesPerColumn++;
         }
-        if (pageIndex >= pagesPerRow * pagesPerColumn) {
+        int viewableLevelCount = Math.max(1, getViewableLevelCount());
+        if (pageIndex >= pagesPerRow * pagesPerColumn * viewableLevelCount) {
           return NO_SUCH_PAGE;
         }
         rowIndex = pageIndex / pagesPerRow;
@@ -2062,19 +2064,44 @@ public class PlanComponent extends JComponent implements PlanView, Scrollable, P
           Math.max(0, 
               (imageableHeight * pagesPerColumn / printScale - printedItemBounds.getHeight() - 2 * extraMargin) / 2));
       setRenderingHints(g2D);
+      Level originalLevel = this.home.getSelectedLevel();
+      java.util.List<Level> viewableLevels = new java.util.ArrayList<>();
+      for (Level l : this.home.getLevels()) {
+        if (l.isViewable()) {
+          viewableLevels.add(l);
+        }
+      }
+      int levelIndex = (pagesPerRow * pagesPerColumn == 1) ? pageIndex : pageIndex / (pagesPerRow * pagesPerColumn);
+      if (levelIndex < viewableLevels.size()) {
+        this.home.setSelectedLevel(viewableLevels.get(levelIndex));
+      }
       try {
         // Print component contents
         paintContent(g2D, printScale, PaintMode.PRINT);
       } catch (InterruptedIOException ex) {
         // Ignore exception because it may happen only in EXPORT paint mode 
-      }   
+      }
+      this.home.setSelectedLevel(originalLevel);
       g2D.dispose();
       return PAGE_EXISTS;
     } else {
       return NO_SUCH_PAGE;
     }
   }
-  
+
+  /**
+   * Returns the number of viewable levels in the home.
+   * If the home has no viewable levels, this method returns 1 to represent the default single-level state.
+   *
+   * @return the count of viewable levels (minimum 1)
+   */
+  private int getViewableLevelCount() {
+    int count = 0;
+    for (Level level : this.home.getLevels()) {
+      if (level.isViewable()) count++;
+    }
+    return Math.max(1, count);
+  }
   /**
    * Returns an image of the selected items displayed by this component 
    * (camera excepted) with no outline at scale 1/1 (1 pixel = 1cm).
